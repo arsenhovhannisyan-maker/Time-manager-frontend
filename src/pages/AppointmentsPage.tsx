@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, Clock, MapPin, AlertCircle, ChevronDown } from 'lucide-react'
+import { CalendarDays, Clock, MapPin, AlertCircle, ChevronDown, AlertTriangle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { appointmentsApi } from '../api/appointments.api'
 import { Layout } from '../components/layout/Layout'
@@ -32,7 +32,7 @@ export function AppointmentsPage() {
     { label: t('appointments.cancelled'), value: 'CANCELLED' },
   ]
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['appointments', page],
     queryFn: () => appointmentsApi.list({ page, limit: 20 }),
   })
@@ -82,6 +82,17 @@ export function AppointmentsPage() {
 
         {isLoading ? (
           <PageSpinner />
+        ) : isError ? (
+          <EmptyState
+            icon={<AlertTriangle size={32} />}
+            title={t('common.error')}
+            description={t('appointments.noAppointmentsHint')}
+            action={
+              <Button variant="secondary" onClick={() => window.location.reload()}>
+                {t('common.loading')}
+              </Button>
+            }
+          />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={<CalendarDays size={32} />}

@@ -1,10 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useRef, useCallback } from 'react'
 
 export function useScrollReveal() {
-  const ref = useRef<HTMLDivElement>(null)
+  const observerRef = useRef<IntersectionObserver | null>(null)
 
-  useEffect(() => {
-    const el = ref.current
+  const callbackRef = useCallback((el: HTMLDivElement | null) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+      observerRef.current = null
+    }
     if (!el) return
 
     const observer = new IntersectionObserver(
@@ -16,10 +19,9 @@ export function useScrollReveal() {
       },
       { threshold: 0.1 },
     )
-
     observer.observe(el)
-    return () => observer.disconnect()
+    observerRef.current = observer
   }, [])
 
-  return ref
+  return callbackRef
 }

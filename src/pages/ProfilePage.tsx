@@ -8,6 +8,7 @@ import {
   Shield, CalendarDays, Edit3, AlertCircle, Eye, EyeOff,
 } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../store/auth.store'
 import { usersApi } from '../api/users.api'
 import { appointmentsApi } from '../api/appointments.api'
@@ -22,7 +23,6 @@ function buildAvatarUrl(src: string) {
   return src.startsWith('http') ? src : `${BASE_URL}${src}`
 }
 
-/* ── Schemas ── */
 const profileSchema = z.object({
   firstName: z.string().min(2, 'Required'),
   lastName: z.string().min(2, 'Required'),
@@ -45,7 +45,6 @@ const passwordSchema = z
 type ProfileData = z.infer<typeof profileSchema>
 type PasswordData = z.infer<typeof passwordSchema>
 
-/* ── Password strength ── */
 function passwordStrength(pwd: string): { level: number; label: string; color: string } {
   if (!pwd) return { level: 0, label: '', color: '' }
   let score = 0
@@ -62,11 +61,10 @@ function passwordStrength(pwd: string): { level: number; label: string; color: s
   return map[Math.min(score, 4) - 1] ?? { level: 0, label: '', color: '' }
 }
 
-/* ── Tabs ── */
 type Tab = 'info' | 'security'
 
-/* ── Component ── */
 export function ProfilePage() {
+  const { t } = useTranslation()
   const { user, refreshUser } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('info')
   const [profileSuccess, setProfileSuccess] = useState(false)
@@ -79,14 +77,12 @@ export function ProfilePage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [newPwdValue, setNewPwdValue] = useState('')
 
-  /* appointments count */
   const { data: apptData } = useQuery({
     queryKey: ['appointments-count'],
     queryFn: () => appointmentsApi.list({ limit: 1 }),
     enabled: !!user,
   })
 
-  /* Profile form */
   const {
     register: regP,
     handleSubmit: handleP,
@@ -102,7 +98,6 @@ export function ProfilePage() {
     },
   })
 
-  /* Password form */
   const {
     register: regPwd,
     handleSubmit: handlePwd,
@@ -110,13 +105,11 @@ export function ProfilePage() {
     formState: { errors: errPwd },
   } = useForm<PasswordData>({ resolver: zodResolver(passwordSchema) })
 
-  /* Avatar upload mutation */
   const avatarMutation = useMutation({
     mutationFn: (file: File) => usersApi.uploadAvatar(file),
     onSuccess: async () => { await refreshUser() },
   })
 
-  /* Profile mutation */
   const profileMutation = useMutation({
     mutationFn: (data: ProfileData) => usersApi.updateMe(data),
     onSuccess: async () => {
@@ -126,14 +119,16 @@ export function ProfilePage() {
       setTimeout(() => setProfileSuccess(false), 4000)
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Update failed'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Update failed'
       setProfileError(typeof msg === 'string' ? msg : 'Update failed')
     },
   })
 
-  /* Password mutation */
   const passwordMutation = useMutation({
-    mutationFn: (data: PasswordData) => usersApi.changePassword(data.currentPassword, data.newPassword),
+    mutationFn: (data: PasswordData) =>
+      usersApi.changePassword(data.currentPassword, data.newPassword),
     onSuccess: () => {
       setPasswordSuccess(true)
       setPasswordError('')
@@ -142,12 +137,13 @@ export function ProfilePage() {
       setTimeout(() => setPasswordSuccess(false), 4000)
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed'
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        'Failed'
       setPasswordError(typeof msg === 'string' ? msg : 'Failed')
     },
   })
 
-  /* Avatar file pick */
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -157,18 +153,14 @@ export function ProfilePage() {
 
   if (!user) return null
 
-  const memberSince = user.createdAt
-    ? format(parseISO(user.createdAt), 'MMMM yyyy')
-    : ''
-
+  const memberSince = user.createdAt ? format(parseISO(user.createdAt), 'MMMM yyyy') : ''
   const avatarSrc = avatarPreview ?? (user.avatarUrl ? buildAvatarUrl(user.avatarUrl) : null)
   const strength = passwordStrength(newPwdValue)
 
   return (
     <Layout>
-      {/* ── Hero Banner ── */}
+      {/* Hero Banner */}
       <div className="relative bg-gradient-to-br from-violet-700 via-indigo-700 to-violet-900 pb-24">
-        {/* decorative dots */}
         <div
           className="absolute inset-0 opacity-10"
           style={{
@@ -179,7 +171,7 @@ export function ProfilePage() {
 
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-4">
           <div className="flex flex-col sm:flex-row items-center sm:items-end gap-6">
-            {/* Avatar with upload overlay */}
+            {/* Avatar */}
             <div className="relative flex-shrink-0">
               <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl ring-4 ring-white/30 overflow-hidden shadow-2xl">
                 {avatarSrc ? (
@@ -190,13 +182,10 @@ export function ProfilePage() {
                   </div>
                 )}
               </div>
-
-              {/* Upload button */}
               <button
                 onClick={() => fileRef.current?.click()}
                 disabled={avatarMutation.isPending}
                 className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-white text-violet-700 flex items-center justify-center shadow-lg hover:bg-violet-50 transition-colors cursor-pointer border-2 border-violet-100"
-                title="Change photo"
               >
                 {avatarMutation.isPending ? (
                   <div className="w-3.5 h-3.5 border-2 border-violet-300 border-t-violet-700 rounded-full animate-spin" />
@@ -223,7 +212,7 @@ export function ProfilePage() {
                     key={role}
                     className="px-2.5 py-0.5 bg-white/15 backdrop-blur-sm text-white text-xs font-semibold rounded-full capitalize border border-white/20"
                   >
-                    {role.replace(/_/g, ' ')}
+                    {t(`profile.roles.${role}` as Parameters<typeof t>[0]) || role.replace(/_/g, ' ')}
                   </span>
                 ))}
               </div>
@@ -233,12 +222,12 @@ export function ProfilePage() {
             <div className="sm:ml-auto flex gap-6 sm:gap-8 pb-1">
               <div className="text-center">
                 <div className="text-2xl font-bold text-white">{apptData?.total ?? '—'}</div>
-                <div className="text-xs text-violet-300 mt-0.5">Appointments</div>
+                <div className="text-xs text-violet-300 mt-0.5">{t('appointments.title')}</div>
               </div>
               {memberSince && (
                 <div className="text-center">
                   <div className="text-lg font-bold text-white">{memberSince}</div>
-                  <div className="text-xs text-violet-300 mt-0.5">Member since</div>
+                  <div className="text-xs text-violet-300 mt-0.5">{t('profile.memberSince')}</div>
                 </div>
               )}
             </div>
@@ -246,23 +235,23 @@ export function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Main card pulled up over banner ── */}
+      {/* Main card */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 pb-16">
-        <div className="bg-white rounded-3xl shadow-2xl shadow-slate-200/70 border border-slate-100 overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl shadow-slate-200/70 dark:shadow-none border border-slate-100 dark:border-slate-700 overflow-hidden">
 
           {/* Tab bar */}
-          <div className="flex border-b-2 border-slate-100 px-6 pt-2">
+          <div className="flex border-b-2 border-slate-100 dark:border-slate-700 px-6 pt-2">
             {([
-              { id: 'info', label: 'Personal Info', icon: User },
-              { id: 'security', label: 'Security', icon: Shield },
+              { id: 'info', label: t('profile.personalInfo'), icon: User },
+              { id: 'security', label: t('profile.security'), icon: Shield },
             ] as { id: Tab; label: string; icon: typeof User }[]).map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
                 className={`flex items-center gap-2 px-6 py-3 text-sm font-semibold -mb-0.5 border-b-2 transition-all cursor-pointer mr-1 ${
                   activeTab === id
-                    ? 'border-violet-600 text-violet-700'
-                    : 'border-transparent text-slate-400 hover:text-slate-700 hover:border-slate-300'
+                    ? 'border-violet-600 text-violet-700 dark:text-violet-400'
+                    : 'border-transparent text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
                 <Icon size={15} />
@@ -271,48 +260,43 @@ export function ProfilePage() {
             ))}
           </div>
 
-          {/* ── Tab: Personal Info ── */}
+          {/* Tab: Personal Info */}
           {activeTab === 'info' && (
             <div className="p-6 md:p-8">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Personal Information</h2>
-                  <p className="text-slate-400 text-sm mt-0.5">Update your name, email, and contact details</p>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    {t('profile.personalInformation')}
+                  </h2>
+                  <p className="text-slate-400 dark:text-slate-500 text-sm mt-0.5">
+                    Update your name, email, and contact details
+                  </p>
                 </div>
-                <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 bg-slate-50 px-3 py-1.5 rounded-lg">
+                <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-700/50 px-3 py-1.5 rounded-lg">
                   <Edit3 size={12} />
                   Editable
                 </div>
               </div>
 
-              <form
-                onSubmit={handleP((data) => profileMutation.mutate(data))}
-                className="space-y-5"
-              >
-                {/* Name row */}
+              <form onSubmit={handleP((data) => profileMutation.mutate(data))} className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
-                    <Input
-                      label="First Name"
-                      placeholder="John"
-                      icon={<User size={15} />}
-                      error={errP.firstName?.message}
-                      {...regP('firstName')}
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      label="Last Name"
-                      placeholder="Doe"
-                      error={errP.lastName?.message}
-                      {...regP('lastName')}
-                    />
-                  </div>
+                  <Input
+                    label={t('profile.firstName')}
+                    placeholder="John"
+                    icon={<User size={15} />}
+                    error={errP.firstName?.message}
+                    {...regP('firstName')}
+                  />
+                  <Input
+                    label={t('profile.lastName')}
+                    placeholder="Doe"
+                    error={errP.lastName?.message}
+                    {...regP('lastName')}
+                  />
                 </div>
 
-                {/* Email */}
                 <Input
-                  label="Email Address"
+                  label={t('profile.email')}
                   type="email"
                   placeholder="you@example.com"
                   icon={<Mail size={15} />}
@@ -320,10 +304,9 @@ export function ProfilePage() {
                   {...regP('email')}
                 />
 
-                {/* Phone + DOB */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <Input
-                    label="Phone Number"
+                    label={t('profile.phone')}
                     type="tel"
                     placeholder="+1 234 567 890"
                     icon={<Phone size={15} />}
@@ -331,7 +314,7 @@ export function ProfilePage() {
                     {...regP('phoneNumber')}
                   />
                   <Input
-                    label="Date of Birth"
+                    label={t('profile.dateOfBirth')}
                     type="date"
                     icon={<Calendar size={15} />}
                     error={errP.dateOfBirth?.message}
@@ -339,25 +322,26 @@ export function ProfilePage() {
                   />
                 </div>
 
-                {/* Feedback */}
                 {profileError && (
-                  <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                  <div className="flex items-start gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl px-4 py-3">
                     <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{profileError}</p>
+                    <p className="text-sm text-red-700 dark:text-red-400">{profileError}</p>
                   </div>
                 )}
                 {profileSuccess && (
-                  <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl px-4 py-3">
                     <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                    <p className="text-sm text-green-700 font-medium">Profile updated successfully!</p>
+                    <p className="text-sm text-green-700 dark:text-green-400 font-medium">
+                      Profile updated successfully!
+                    </p>
                   </div>
                 )}
 
-                {/* Actions */}
                 <div className="flex items-center justify-between pt-2">
-                  <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                  <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
                     <CalendarDays size={12} />
-                    Last updated: {user.updatedAt ? format(parseISO(user.updatedAt), 'MMM d, yyyy') : '—'}
+                    Last updated:{' '}
+                    {user.updatedAt ? format(parseISO(user.updatedAt), 'MMM d, yyyy') : '—'}
                   </p>
                   <Button
                     type="submit"
@@ -365,26 +349,29 @@ export function ProfilePage() {
                     disabled={!profileDirty}
                     size="md"
                   >
-                    Save Changes
+                    {profileMutation.isPending ? t('profile.saving') : t('profile.saveChanges')}
                   </Button>
                 </div>
               </form>
             </div>
           )}
 
-          {/* ── Tab: Security ── */}
+          {/* Tab: Security */}
           {activeTab === 'security' && (
             <div className="p-6 md:p-8">
               <div className="mb-6">
-                <h2 className="text-lg font-semibold text-slate-900">Change Password</h2>
-                <p className="text-slate-400 text-sm mt-0.5">Choose a strong password to keep your account safe</p>
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                  {t('profile.changePassword')}
+                </h2>
+                <p className="text-slate-400 dark:text-slate-500 text-sm mt-0.5">
+                  Choose a strong password to keep your account safe
+                </p>
               </div>
 
-              {/* Security tip */}
-              <div className="flex items-start gap-3 bg-indigo-50 border border-indigo-100 rounded-2xl px-4 py-3 mb-6">
-                <Shield size={16} className="text-indigo-500 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-indigo-700">
-                  Use a mix of uppercase letters, numbers, and symbols for a strong password.
+              <div className="flex items-start gap-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-2xl px-4 py-3 mb-6">
+                <Shield size={16} className="text-indigo-500 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-indigo-700 dark:text-indigo-300">
+                  {t('profile.securityTip')}
                 </p>
               </div>
 
@@ -395,7 +382,7 @@ export function ProfilePage() {
                 {/* Current password */}
                 <div className="relative">
                   <Input
-                    label="Current Password"
+                    label={t('profile.currentPassword')}
                     type={showCurrentPwd ? 'text' : 'password'}
                     placeholder="Your current password"
                     icon={<Lock size={15} />}
@@ -405,7 +392,7 @@ export function ProfilePage() {
                   <button
                     type="button"
                     onClick={() => setShowCurrentPwd((v) => !v)}
-                    className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                    className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
                   >
                     {showCurrentPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -415,7 +402,7 @@ export function ProfilePage() {
                 <div>
                   <div className="relative">
                     <Input
-                      label="New Password"
+                      label={t('profile.newPassword')}
                       type={showNewPwd ? 'text' : 'password'}
                       placeholder="Choose a new password"
                       icon={<Lock size={15} />}
@@ -428,13 +415,12 @@ export function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => setShowNewPwd((v) => !v)}
-                      className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                      className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer"
                     >
                       {showNewPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
 
-                  {/* Strength bar */}
                   {newPwdValue && (
                     <div className="mt-2">
                       <div className="flex gap-1 mb-1">
@@ -442,18 +428,23 @@ export function ProfilePage() {
                           <div
                             key={n}
                             className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                              n <= strength.level ? strength.color : 'bg-slate-100'
+                              n <= strength.level ? strength.color : 'bg-slate-100 dark:bg-slate-700'
                             }`}
                           />
                         ))}
                       </div>
                       {strength.label && (
-                        <p className={`text-xs font-medium ${
-                          strength.level <= 1 ? 'text-red-500'
-                          : strength.level === 2 ? 'text-orange-500'
-                          : strength.level === 3 ? 'text-yellow-600'
-                          : 'text-green-600'
-                        }`}>
+                        <p
+                          className={`text-xs font-medium ${
+                            strength.level <= 1
+                              ? 'text-red-500'
+                              : strength.level === 2
+                                ? 'text-orange-500'
+                                : strength.level === 3
+                                  ? 'text-yellow-600'
+                                  : 'text-green-600'
+                          }`}
+                        >
                           {strength.label} password
                         </p>
                       )}
@@ -463,7 +454,7 @@ export function ProfilePage() {
 
                 {/* Confirm password */}
                 <Input
-                  label="Confirm New Password"
+                  label={t('profile.confirmPassword')}
                   type="password"
                   placeholder="Repeat your new password"
                   icon={<Lock size={15} />}
@@ -471,23 +462,24 @@ export function ProfilePage() {
                   {...regPwd('confirmPassword')}
                 />
 
-                {/* Feedback */}
                 {passwordError && (
-                  <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
+                  <div className="flex items-start gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl px-4 py-3">
                     <AlertCircle size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-red-700">{passwordError}</p>
+                    <p className="text-sm text-red-700 dark:text-red-400">{passwordError}</p>
                   </div>
                 )}
                 {passwordSuccess && (
-                  <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-2xl px-4 py-3">
                     <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                    <p className="text-sm text-green-700 font-medium">Password changed successfully!</p>
+                    <p className="text-sm text-green-700 dark:text-green-400 font-medium">
+                      Password changed successfully!
+                    </p>
                   </div>
                 )}
 
                 <div className="pt-2">
                   <Button type="submit" loading={passwordMutation.isPending}>
-                    Update Password
+                    {passwordMutation.isPending ? t('profile.updating') : t('profile.updatePassword')}
                   </Button>
                 </div>
               </form>

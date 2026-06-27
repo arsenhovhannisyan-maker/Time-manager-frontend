@@ -52,7 +52,7 @@ export function OrganizationDetailPage() {
   return (
     <Layout>
       {/* Hero Banner */}
-      <div className="relative h-56 md:h-72 bg-gradient-to-br from-violet-600 to-indigo-700 overflow-hidden">
+      <div className="relative h-36 md:h-44 bg-gradient-to-br from-violet-600 to-indigo-700 overflow-hidden">
         {org.logo && (
           <img
             src={buildLogoUrl(org.logo)}
