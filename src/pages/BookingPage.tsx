@@ -14,6 +14,7 @@ import { PageSpinner } from '../components/ui/Spinner'
 import { Avatar } from '../components/ui/Avatar'
 import { Button } from '../components/ui/Button'
 import { Modal } from '../components/ui/Modal'
+import { EmptyState } from '../components/ui/EmptyState'
 import { formatPrice, formatDuration, fullName, initials } from '../utils/format'
 import { formatTime, toISODate, generateCalendarDays } from '../utils/date'
 import { useAuth } from '../store/auth.store'
@@ -36,13 +37,23 @@ export function BookingPage() {
   const [bookingError, setBookingError] = useState('')
   const [calendarMonth, setCalendarMonth] = useState(() => new Date())
 
-  const { data: employee, isLoading: empLoading } = useQuery({
+  const {
+    data: employee,
+    isLoading: empLoading,
+    isError: empError,
+    refetch: refetchEmployee,
+  } = useQuery({
     queryKey: ['employee', orgId, employeeId],
     queryFn: () => employeesApi.get(orgId!, employeeId!),
     enabled: !!orgId && !!employeeId,
   })
 
-  const { data: services, isLoading: servicesLoading } = useQuery({
+  const {
+    data: services,
+    isLoading: servicesLoading,
+    isError: servicesError,
+    refetch: refetchServices,
+  } = useQuery({
     queryKey: ['employee-services', orgId, employeeId],
     queryFn: () => employeesApi.services(orgId!, employeeId!),
     enabled: !!orgId && !!employeeId,
@@ -50,7 +61,12 @@ export function BookingPage() {
 
   const dateStr = selectedDate ? toISODate(selectedDate) : ''
 
-  const { data: slots, isLoading: slotsLoading } = useQuery({
+  const {
+    data: slots,
+    isLoading: slotsLoading,
+    isError: slotsError,
+    refetch: refetchSlots,
+  } = useQuery({
     queryKey: ['slots', orgId, employeeId, dateStr, selectedService?.id],
     queryFn: () => schedulesApi.slots(orgId!, employeeId!, dateStr, selectedService!.id),
     enabled: !!selectedDate && !!selectedService,
@@ -73,7 +89,7 @@ export function BookingPage() {
     onError: (err: unknown) => {
       const msg =
         (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message ??
-        'Booking failed. Please try again.'
+        t('booking.bookingFailed')
       setBookingError(Array.isArray(msg) ? msg.join(', ') : msg)
     },
   })
@@ -102,12 +118,42 @@ export function BookingPage() {
   }
 
   if (empLoading || servicesLoading) return <Layout><PageSpinner /></Layout>
+
+  if (empError || servicesError)
+    return (
+      <Layout>
+        <EmptyState
+          icon={<AlertCircle size={32} />}
+          title={t('booking.loadError')}
+          description={t('booking.loadErrorHint')}
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                refetchEmployee()
+                refetchServices()
+              }}
+            >
+              {t('common.retry')}
+            </Button>
+          }
+        />
+      </Layout>
+    )
+
   if (!employee)
     return (
       <Layout>
-        <div className="p-8 text-center text-slate-500 dark:text-slate-400">
-          Employee not found
-        </div>
+        <EmptyState
+          icon={<AlertCircle size={32} />}
+          title={t('booking.employeeNotFound')}
+          description={t('booking.employeeNotFoundHint')}
+          action={
+            <Button variant="secondary" onClick={() => navigate(`/organizations/${orgId}`)}>
+              {t('orgDetail.back')}
+            </Button>
+          }
+        />
       </Layout>
     )
 
@@ -202,7 +248,7 @@ export function BookingPage() {
               </h2>
               {!services || services.length === 0 ? (
                 <p className="text-sm text-slate-400 dark:text-slate-500">
-                  No services assigned to this specialist.
+                  {t('booking.noServicesAssigned')}
                 </p>
               ) : (
                 <div className="flex flex-col gap-3">
@@ -332,6 +378,19 @@ export function BookingPage() {
                   <div className="flex items-center justify-center py-8">
                     <div className="w-6 h-6 rounded-full border-2 border-violet-200 border-t-violet-600 animate-spin" />
                   </div>
+                ) : slotsError ? (
+                  <div className="py-8 text-center">
+                    <AlertCircle size={32} className="text-red-300 dark:text-red-800 mx-auto mb-2" />
+                    <p className="text-sm text-red-500 dark:text-red-400">
+                      {t('booking.slotsError')}
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 mb-3">
+                      {t('booking.slotsErrorHint')}
+                    </p>
+                    <Button size="sm" variant="secondary" onClick={() => refetchSlots()}>
+                      {t('common.retry')}
+                    </Button>
+                  </div>
                 ) : !slots || slots.length === 0 ? (
                   <div className="py-8 text-center">
                     <Calendar size={32} className="text-slate-200 dark:text-slate-700 mx-auto mb-2" />
@@ -416,7 +475,7 @@ export function BookingPage() {
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Any special requests..."
+                      placeholder={t('booking.notesInputPlaceholder')}
                       rows={3}
                       className="w-full text-sm rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 px-3 py-2 outline-none focus:border-violet-400 dark:focus:border-violet-500 focus:ring-3 focus:ring-violet-100 dark:focus:ring-violet-900/40 resize-none transition-all"
                     />
@@ -433,7 +492,7 @@ export function BookingPage() {
 
                   {!isAuthenticated && (
                     <p className="text-xs text-center text-slate-400 dark:text-slate-500">
-                      You need to sign in to book an appointment
+                      {t('booking.signInRequired')}
                     </p>
                   )}
                 </div>
@@ -441,7 +500,7 @@ export function BookingPage() {
                 <div className="text-center py-8">
                   <Calendar size={32} className="text-slate-200 dark:text-slate-700 mx-auto mb-2" />
                   <p className="text-sm text-slate-400 dark:text-slate-500">
-                    Select a service to get started
+                    {t('booking.selectServicePrompt')}
                   </p>
                 </div>
               )}

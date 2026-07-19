@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  MapPin, Phone, Mail, Clock, Star, ArrowLeft, User, Briefcase, ChevronRight
+  MapPin, Phone, Mail, Clock, Star, ArrowLeft, User, Briefcase, ChevronRight, AlertCircle
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { organizationsApi } from '../api/organizations.api'
@@ -9,6 +9,7 @@ import { employeesApi } from '../api/employees.api'
 import { Layout } from '../components/layout/Layout'
 import { PageSpinner } from '../components/ui/Spinner'
 import { Avatar } from '../components/ui/Avatar'
+import { Button } from '../components/ui/Button'
 import { Tag } from '../components/ui/Badge'
 import { EmptyState } from '../components/ui/EmptyState'
 import { fullName, initials } from '../utils/format'
@@ -27,25 +28,59 @@ export function OrganizationDetailPage() {
   const navigate = useNavigate()
   const gridRef = useScrollReveal()
 
-  const { data: org, isLoading: orgLoading } = useQuery({
+  const {
+    data: org,
+    isLoading: orgLoading,
+    isError: orgError,
+    refetch: refetchOrg,
+  } = useQuery({
     queryKey: ['organization', id],
     queryFn: () => organizationsApi.get(id!),
     enabled: !!id,
   })
 
-  const { data: employees, isLoading: empLoading } = useQuery({
+  const {
+    data: employees,
+    isLoading: empLoading,
+    isError: empError,
+    refetch: refetchEmployees,
+  } = useQuery({
     queryKey: ['employees', id],
     queryFn: () => employeesApi.list(id!),
     enabled: !!id,
   })
 
   if (orgLoading) return <Layout><PageSpinner /></Layout>
+
+  if (orgError)
+    return (
+      <Layout>
+        <EmptyState
+          icon={<AlertCircle size={32} />}
+          title={t('orgDetail.loadError')}
+          description={t('orgDetail.loadErrorHint')}
+          action={
+            <Button variant="secondary" onClick={() => refetchOrg()}>
+              {t('common.retry')}
+            </Button>
+          }
+        />
+      </Layout>
+    )
+
   if (!org)
     return (
       <Layout>
-        <div className="p-8 text-center text-slate-500 dark:text-slate-400">
-          Organization not found
-        </div>
+        <EmptyState
+          icon={<AlertCircle size={32} />}
+          title={t('orgDetail.notFound')}
+          description={t('orgDetail.notFoundHint')}
+          action={
+            <Button variant="secondary" onClick={() => navigate('/organizations')}>
+              {t('common.goHome')}
+            </Button>
+          }
+        />
       </Layout>
     )
 
@@ -133,7 +168,7 @@ export function OrganizationDetailPage() {
                 <Star size={20} className="text-amber-400 fill-amber-400" />
                 <span className="text-2xl font-bold text-slate-900 dark:text-white">4.8</span>
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Based on reviews</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{t('orgDetail.basedOnReviews')}</p>
             </div>
           </div>
         </div>
@@ -146,6 +181,17 @@ export function OrganizationDetailPage() {
 
           {empLoading ? (
             <PageSpinner />
+          ) : empError ? (
+            <EmptyState
+              icon={<AlertCircle size={32} />}
+              title={t('orgDetail.loadError')}
+              description={t('orgDetail.loadErrorHint')}
+              action={
+                <Button variant="secondary" onClick={() => refetchEmployees()}>
+                  {t('common.retry')}
+                </Button>
+              }
+            />
           ) : !employees || employees.length === 0 ? (
             <EmptyState
               icon={<User size={32} />}
@@ -190,7 +236,7 @@ export function OrganizationDetailPage() {
                   <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-700 flex items-center gap-2">
                     <div className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
                       <Clock size={11} />
-                      Available today
+                      {t('orgDetail.availableToday')}
                     </div>
                     <span className="text-slate-200 dark:text-slate-700">•</span>
                     <div className="flex items-center gap-1 text-xs text-amber-500">
