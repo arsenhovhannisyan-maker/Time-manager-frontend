@@ -54,7 +54,7 @@ export function RegisterPage() {
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200 dark:shadow-violet-900/40">
               <CalendarDays size={22} className="text-white" />
             </div>
-            <span className="text-2xl font-bold text-slate-900 dark:text-white">BookEasy</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">ReminderMe</span>
           </Link>
           <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
             {t('auth.registerTitle')}

@@ -87,7 +87,7 @@ export function OrganizationDetailPage() {
   return (
     <Layout>
       {/* Hero Banner */}
-      <div className="relative h-36 md:h-44 bg-gradient-to-br from-violet-600 to-indigo-700 overflow-hidden">
+      <div className="relative h-20 md:h-24 bg-gradient-to-br from-violet-600 to-indigo-700 overflow-hidden">
         {org.logo && (
           <img
             src={buildLogoUrl(org.logo)}
@@ -104,7 +104,7 @@ export function OrganizationDetailPage() {
         </button>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 pb-16">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12 pb-16">
         {/* Org Card */}
         <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/60 dark:shadow-none border border-slate-100 dark:border-slate-700 p-6 md:p-8 mb-8">
           <div className="flex flex-col md:flex-row md:items-start gap-6">

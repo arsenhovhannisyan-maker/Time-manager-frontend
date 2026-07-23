@@ -1,5 +1,5 @@
 import apiClient from './client'
-import type { Appointment, PaginatedResponse } from '../types'
+import type { Appointment, AppointmentStatus, PaginatedResponse } from '../types'
 
 export interface CreateAppointmentDto {
   organizationId: string
@@ -14,6 +14,7 @@ export interface ListAppointmentsParams {
   page?: number
   limit?: number
   organizationId?: string
+  status?: AppointmentStatus
 }
 
 export const appointmentsApi = {

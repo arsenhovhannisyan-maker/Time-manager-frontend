@@ -26,15 +26,20 @@ export function AppointmentsPage() {
 
   const STATUS_TABS: { label: string; value: AppointmentStatus | 'ALL' }[] = [
     { label: t('appointments.all'), value: 'ALL' },
-    { label: t('appointments.upcoming'), value: 'CONFIRMED' },
-    { label: t('appointments.pending'), value: 'PENDING' },
-    { label: t('appointments.completed'), value: 'COMPLETED' },
-    { label: t('appointments.cancelled'), value: 'CANCELLED' },
+    { label: t('appointments.upcoming'), value: 'confirmed' },
+    { label: t('appointments.pending'), value: 'pending' },
+    { label: t('appointments.completed'), value: 'completed' },
+    { label: t('appointments.cancelled'), value: 'cancelled' },
   ]
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['appointments', page],
-    queryFn: () => appointmentsApi.list({ page, limit: 20 }),
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['appointments', page, activeTab],
+    queryFn: () =>
+      appointmentsApi.list({
+        page,
+        limit: 20,
+        status: activeTab === 'ALL' ? undefined : activeTab,
+      }),
   })
 
   const cancelMutation = useMutation({
@@ -46,10 +51,12 @@ export function AppointmentsPage() {
     },
   })
 
-  const filtered =
-    activeTab === 'ALL'
-      ? data?.items ?? []
-      : (data?.items ?? []).filter((a) => a.status === activeTab)
+  const handleTabChange = (tab: AppointmentStatus | 'ALL') => {
+    setActiveTab(tab)
+    setPage(1)
+  }
+
+  const filtered = data?.items ?? []
 
   return (
     <Layout>
@@ -68,7 +75,7 @@ export function AppointmentsPage() {
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.value}
-              onClick={() => setActiveTab(tab.value)}
+              onClick={() => handleTabChange(tab.value)}
               className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
                 activeTab === tab.value
                   ? 'bg-violet-600 text-white shadow-sm'
@@ -88,8 +95,8 @@ export function AppointmentsPage() {
             title={t('common.error')}
             description={t('appointments.noAppointmentsHint')}
             action={
-              <Button variant="secondary" onClick={() => window.location.reload()}>
-                {t('common.loading')}
+              <Button variant="secondary" onClick={() => refetch()}>
+                {t('common.retry')}
               </Button>
             }
           />
@@ -114,11 +121,11 @@ export function AppointmentsPage() {
                 {/* Status bar */}
                 <div
                   className={`h-1 ${
-                    appt.status === 'CONFIRMED'
+                    appt.status === 'confirmed'
                       ? 'bg-green-500'
-                      : appt.status === 'PENDING'
+                      : appt.status === 'pending'
                         ? 'bg-amber-400'
-                        : appt.status === 'COMPLETED'
+                        : appt.status === 'completed'
                           ? 'bg-violet-500'
                           : 'bg-slate-200 dark:bg-slate-700'
                   }`}
@@ -191,7 +198,7 @@ export function AppointmentsPage() {
                     </div>
                   )}
 
-                  {(appt.status === 'PENDING' || appt.status === 'CONFIRMED') && (
+                  {(appt.status === 'pending' || appt.status === 'confirmed') && (
                     <div className="mt-4 pt-3 border-t border-slate-50 dark:border-slate-700 flex justify-end">
                       <button
                         onClick={() => setCancelId(appt.id)}

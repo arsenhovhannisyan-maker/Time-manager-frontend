@@ -42,7 +42,7 @@ export function Navbar() {
               <CalendarDays size={18} className="text-white" />
             </div>
             <span className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-violet-700 dark:group-hover:text-violet-400 transition-colors">
-              BookEasy
+              ReminderMe
             </span>
           </Link>
 

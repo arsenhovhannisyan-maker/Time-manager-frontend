@@ -12,6 +12,8 @@ import { OrganizationDetailPage } from './pages/OrganizationDetailPage'
 import { BookingPage } from './pages/BookingPage'
 import { AppointmentsPage } from './pages/AppointmentsPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { AboutPage } from './pages/AboutPage'
+import { ContactPage } from './pages/ContactPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PageSpinner } from './components/ui/Spinner'
 
@@ -82,6 +84,9 @@ function AppRoutes() {
           </GuestOnly>
         }
       />
+
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
 
       <Route path="/organizations" element={<OrganizationsPage />} />
       <Route path="/organizations/:id" element={<OrganizationDetailPage />} />

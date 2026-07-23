@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Mail, Lock, CalendarDays } from 'lucide-react'
+import { Mail, Lock, CalendarDays, LogIn } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../store/auth.store'
 import { Input } from '../components/ui/Input'
@@ -23,6 +23,7 @@ export function LoginPage() {
   const location = useLocation()
   const [serverError, setServerError] = useState('')
   const from = (location.state as { from?: string })?.from ?? '/'
+  const redirectedFromProtectedRoute = from !== '/'
 
   const {
     register,
@@ -52,7 +53,7 @@ export function LoginPage() {
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-violet-200 dark:shadow-violet-900/40">
               <CalendarDays size={22} className="text-white" />
             </div>
-            <span className="text-2xl font-bold text-slate-900 dark:text-white">BookEasy</span>
+            <span className="text-2xl font-bold text-slate-900 dark:text-white">ReminderMe</span>
           </Link>
           <h1 className="mt-6 text-2xl font-bold text-slate-900 dark:text-white">
             {t('auth.loginTitle')}
@@ -64,6 +65,12 @@ export function LoginPage() {
 
         {/* Card */}
         <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-slate-200/60 dark:shadow-none border border-slate-100 dark:border-slate-700 p-8">
+          {redirectedFromProtectedRoute && (
+            <div className="flex items-start gap-3 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800 px-4 py-3 mb-5 text-sm text-violet-700 dark:text-violet-300">
+              <LogIn size={16} className="flex-shrink-0 mt-0.5" />
+              <span>{t('auth.signInRequired')}</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
             <Input
               label={t('auth.email')}

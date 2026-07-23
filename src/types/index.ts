@@ -68,13 +68,15 @@ export interface Employee {
   updatedAt: string
 }
 
+// Values match the backend's AppointmentStatus enum runtime strings exactly
+// (the enum's TS member names are uppercase, but their string values are lowercase).
 export type AppointmentStatus =
-  | 'PENDING'
-  | 'CONFIRMED'
-  | 'REJECTED'
-  | 'CANCELLED'
-  | 'COMPLETED'
-  | 'NO_SHOW'
+  | 'pending'
+  | 'confirmed'
+  | 'rejected'
+  | 'cancelled'
+  | 'completed'
+  | 'no_show'
 
 export interface Appointment {
   id: string

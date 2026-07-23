@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Search, MapPin, Clock, Star, Filter, X } from 'lucide-react'
+import { Search, MapPin, Clock, Star, Filter, X, LayoutGrid, Map as MapIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { categoriesApi } from '../api/categories.api'
 import { organizationsApi } from '../api/organizations.api'
@@ -9,6 +9,7 @@ import { useDebounce } from '../hooks/useDebounce'
 import { Layout } from '../components/layout/Layout'
 import { PageSpinner } from '../components/ui/Spinner'
 import { EmptyState } from '../components/ui/EmptyState'
+import { YandexMap } from '../components/map/YandexMap'
 import { useScrollReveal } from '../hooks/useScrollReveal'
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:7777'
@@ -38,6 +39,7 @@ export function OrganizationsPage() {
   const [search, setSearch] = useState(params.get('search') ?? '')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [page, setPage] = useState(1)
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list')
   const debouncedSearch = useDebounce(search, 400)
 
   const gridRef = useScrollReveal()
@@ -130,11 +132,37 @@ export function OrganizationsPage() {
           )}
         </div>
 
-        {data && (
-          <p className="text-sm text-slate-400 dark:text-slate-500 mb-4">
-            {data.total} {t('orgs.results')}
-          </p>
-        )}
+        <div className="flex items-center justify-between mb-4">
+          {data && (
+            <p className="text-sm text-slate-400 dark:text-slate-500">
+              {data.total} {t('orgs.results')}
+            </p>
+          )}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1 ml-auto">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                viewMode === 'list'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              <LayoutGrid size={14} />
+              {t('orgs.viewList')}
+            </button>
+            <button
+              onClick={() => setViewMode('map')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                viewMode === 'map'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              <MapIcon size={14} />
+              {t('orgs.viewMap')}
+            </button>
+          </div>
+        </div>
 
         {isLoading ? (
           <PageSpinner />
@@ -143,6 +171,12 @@ export function OrganizationsPage() {
             icon={<Search size={32} />}
             title={t('orgs.noResults')}
             description={t('orgs.noResultsHint')}
+          />
+        ) : viewMode === 'map' ? (
+          <YandexMap
+            organizations={data?.items ?? []}
+            onSelectOrg={(id) => navigate(`/organizations/${id}`)}
+            className="h-[500px]"
           />
         ) : (
           <>
